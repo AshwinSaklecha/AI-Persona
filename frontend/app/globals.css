@@ -238,6 +238,7 @@ textarea {
   display: flex;
   flex-direction: column;
   gap: 12px;
+  min-height: 0;
 }
 
 .composer textarea,
@@ -249,7 +250,13 @@ textarea {
   border-radius: 18px;
   background: rgba(255, 255, 255, 0.8);
   color: var(--text);
-  resize: vertical;
+  overflow-y: auto;
+}
+
+.composer textarea {
+  min-height: 110px;
+  max-height: 220px;
+  resize: none;
 }
 
 .composer-actions,

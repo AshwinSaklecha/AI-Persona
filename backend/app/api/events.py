@@ -15,9 +15,8 @@ def log_client_event(
     event: ClientEvent,
     services: ServiceContainer = Depends(get_services),
 ) -> dict[str, str]:
-    if event.event_type in {"voice_interrupted", "voice_unsupported"}:
+    if event.event_type in {"voice_interrupted", "voice_unsupported", "voice_call_error"}:
         services.evaluation.log_failure(event.event_type, event.details)
     else:
         services.evaluation.log_client_event(event.event_type, event.details)
     return {"status": "accepted"}
-

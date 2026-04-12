@@ -138,3 +138,59 @@ class HealthResponse(BaseModel):
     embedding_ready: bool
     chat_ready: bool
     vector_backend: str
+
+
+class VapiToolCall(BaseModel):
+    id: str
+    name: str
+    arguments: dict[str, Any] = Field(default_factory=dict)
+
+
+class VapiCallContext(BaseModel):
+    id: str | None = None
+    type: str | None = None
+
+
+class VapiToolMessage(BaseModel):
+    timestamp: int | None = None
+    type: str
+    toolCallList: list[VapiToolCall] = Field(default_factory=list)
+    call: VapiCallContext | None = None
+
+
+class VapiToolRequest(BaseModel):
+    message: VapiToolMessage
+
+
+class VapiToolResult(BaseModel):
+    toolCallId: str
+    result: str | None = None
+    error: str | None = None
+
+
+class VapiToolResponse(BaseModel):
+    results: list[VapiToolResult] = Field(default_factory=list)
+
+
+class VapiPreviewResponse(BaseModel):
+    ready: bool
+    assistant_id: str | None = None
+    phone_number_id: str | None = None
+    public_backend_url: str | None = None
+    tool_server_url: str | None = None
+    tool_function_name: str
+
+
+class VapiSyncRequest(BaseModel):
+    public_backend_url: str | None = None
+    sync_phone_number: bool = True
+
+
+class VapiSyncResponse(BaseModel):
+    tool_id: str
+    tool_created: bool
+    tool_server_url: str
+    assistant_id: str
+    phone_number_id: str | None = None
+    phone_number_updated: bool = False
+    synced_at: datetime

@@ -17,6 +17,9 @@ FAILURE_CASES = {
     "llm_generation_error",
     "startup_ingest_failed",
     "github_sync_failed",
+    "vapi_tool_error",
+    "vapi_auth_failed",
+    "voice_call_error",
 }
 
 

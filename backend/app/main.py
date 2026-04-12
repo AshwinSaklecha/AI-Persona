@@ -10,6 +10,7 @@ from app.api.chat import router as chat_router
 from app.api.events import router as events_router
 from app.api.health import router as health_router
 from app.api.ingest import router as ingest_router
+from app.api.vapi import router as vapi_router
 from app.core.config import get_settings
 from app.core.logging import configure_logging, get_logger
 from app.services.container import build_services
@@ -67,3 +68,4 @@ app.include_router(chat_router, prefix=settings.api_prefix)
 app.include_router(ingest_router, prefix=settings.api_prefix)
 app.include_router(booking_router, prefix=settings.api_prefix)
 app.include_router(events_router, prefix=settings.api_prefix)
+app.include_router(vapi_router, prefix=settings.api_prefix)

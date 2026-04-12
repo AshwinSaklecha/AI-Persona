@@ -47,6 +47,13 @@ class Settings(BaseSettings):
     timezone: str = Field(default="Asia/Kolkata", validation_alias="TIMEZONE")
     meeting_duration: int = Field(default=30, validation_alias="MEETING_DURATION")
 
+    vapi_private_api_key: str | None = Field(default=None, validation_alias="VAPI_PRIVATE_API_KEY")
+    vapi_assistant_id: str | None = Field(default=None, validation_alias="VAPI_ASSISTANT_ID")
+    vapi_phone_number_id: str | None = Field(default=None, validation_alias="VAPI_PHONE_NUMBER_ID")
+    vapi_shared_secret: str | None = Field(default=None, validation_alias="VAPI_SHARED_SECRET")
+    public_backend_url: str | None = Field(default=None, validation_alias="PUBLIC_BACKEND_URL")
+    vapi_api_base_url: str = "https://api.vapi.ai"
+
     frontend_origin: str = Field(
         default="http://localhost:3000",
         validation_alias="FRONTEND_ORIGIN",

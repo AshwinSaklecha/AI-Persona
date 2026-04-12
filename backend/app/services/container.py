@@ -12,9 +12,11 @@ from app.services.embeddings import GeminiEmbeddingService
 from app.services.evaluation import EvaluationLogger
 from app.services.github_source import GitHubSourceService
 from app.services.llm import GeminiLLMService
+from app.services.persona_chat import PersonaChatService
 from app.services.prompting import PromptBuilder
 from app.services.retrieval import RetrievalService
 from app.services.source_loader import LocalSourceLoader
+from app.services.vapi_admin import VapiAdminService
 from app.services.vector_store import VectorStore
 
 
@@ -32,6 +34,8 @@ class ServiceContainer:
     github_source: GitHubSourceService
     calcom: CalComService
     booking_flow: BookingFlowService
+    persona_chat: PersonaChatService
+    vapi_admin: VapiAdminService
 
     def rebuild_index(self) -> IngestResponse:
         documents = self.source_loader.load()
@@ -70,6 +74,15 @@ def build_services(settings: Settings) -> ServiceContainer:
         calcom=calcom,
         evaluation=evaluation,
     )
+    persona_chat = PersonaChatService(
+        retrieval=retrieval,
+        prompt_builder=prompt_builder,
+        llm=llm,
+        evaluation=evaluation,
+        booking_flow=booking_flow,
+        retrieval_top_k=settings.retrieval_top_k,
+    )
+    vapi_admin = VapiAdminService(settings, evaluation)
 
     return ServiceContainer(
         settings=settings,
@@ -84,4 +97,6 @@ def build_services(settings: Settings) -> ServiceContainer:
         github_source=github_source,
         calcom=calcom,
         booking_flow=booking_flow,
+        persona_chat=persona_chat,
+        vapi_admin=vapi_admin,
     )

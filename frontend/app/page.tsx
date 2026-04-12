@@ -10,7 +10,7 @@ export default function HomePage() {
           <h1>Production-ready AI persona scaffold</h1>
           <p className="hero-text">
             This UI talks to a FastAPI backend with Gemini, FAISS-backed retrieval,
-            browser voice controls, and Cal.com availability.
+            Vapi-powered voice, and Cal.com availability.
           </p>
         </div>
       </section>
@@ -22,4 +22,3 @@ export default function HomePage() {
     </main>
   );
 }
-

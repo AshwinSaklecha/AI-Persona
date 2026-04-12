@@ -110,3 +110,9 @@ export async function logClientEvent(
     // Client event logging should never block the UI.
   }
 }
+
+export const VAPI_PUBLIC_KEY =
+  process.env.NEXT_PUBLIC_VAPI_PUBLIC_KEY?.trim() ?? "";
+
+export const VAPI_ASSISTANT_ID =
+  process.env.NEXT_PUBLIC_VAPI_ASSISTANT_ID?.trim() ?? "";

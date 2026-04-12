@@ -3,7 +3,7 @@
 import { FormEvent, useState } from "react";
 
 import { ChatResponse, sendChatMessage } from "@/lib/api";
-import { useVoice } from "@/hooks/useVoice";
+import { useVapiVoice } from "@/hooks/useVapiVoice";
 
 type Message = {
   id: string;
@@ -23,11 +23,7 @@ export function PersonaConsole() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const voice = useVoice({
-    onTranscript: (transcript) => {
-      void handleSend(transcript);
-    }
-  });
+  const voice = useVapiVoice();
 
   async function handleSend(content?: string) {
     const message = (content ?? input).trim();
@@ -35,7 +31,6 @@ export function PersonaConsole() {
       return;
     }
 
-    voice.stopSpeaking();
     setLoading(true);
     setError(null);
     setInput("");
@@ -58,7 +53,6 @@ export function PersonaConsole() {
         response
       };
       setMessages((current) => [...current, assistantMessage]);
-      voice.speak(response.answer);
     } catch (requestError) {
       const detail =
         requestError instanceof Error
@@ -86,8 +80,18 @@ export function PersonaConsole() {
           <span className={`status-pill ${loading ? "busy" : ""}`}>
             {loading ? "Thinking..." : "Ready"}
           </span>
-          <span className={`status-pill ${voice.listening ? "busy" : ""}`}>
-            {voice.listening ? "Listening" : "Mic idle"}
+          <span
+            className={`status-pill ${voice.active || voice.connecting ? "busy" : ""}`}
+          >
+            {voice.active
+              ? voice.speaking
+                ? "Voice speaking"
+                : "Voice live"
+              : voice.connecting
+                ? "Connecting voice"
+                : voice.ready
+                  ? "Voice ready"
+                  : "Voice setup needed"}
           </span>
         </div>
       </div>
@@ -189,27 +193,21 @@ export function PersonaConsole() {
             <button
               type="button"
               className="secondary"
-              onClick={voice.listening ? voice.stopListening : voice.startListening}
+              onClick={voice.active ? () => void voice.stopCall() : () => void voice.startCall()}
+              disabled={voice.connecting}
             >
-              {voice.listening ? "Stop mic" : "Use mic"}
+              {voice.active ? "End voice call" : voice.connecting ? "Connecting..." : "Start voice call"}
             </button>
           ) : (
             <button type="button" className="secondary" disabled>
-              Mic unavailable
+              Voice unavailable
             </button>
           )}
-          <button
-            type="button"
-            className="ghost"
-            onClick={() => voice.stopSpeaking()}
-            disabled={!voice.speaking}
-          >
-            Stop voice
-          </button>
         </div>
       </form>
 
       {error ? <p className="error-text">{error}</p> : null}
+      {voice.error ? <p className="error-text">{voice.error}</p> : null}
     </section>
   );
 }
