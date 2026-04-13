@@ -64,6 +64,7 @@ def test_github_source_sync_writes_repo_and_contribution_docs(monkeypatch):
 
     monkeypatch.setattr(service, "_get_json", fake_get_json)
     monkeypatch.setattr(service, "_fetch_readme", lambda client, repo: "# README\n\ncontent")
+    monkeypatch.setattr(service, "_fetch_nested_readmes", lambda client, repo: "")
 
     result = service.sync(refresh=True)
 
@@ -123,3 +124,69 @@ def test_fetch_readme_uses_repo_readme_endpoint_before_filename_guesses():
 
     assert readme == "# README\n\nsmart-doc-generator"
     assert client.paths == ["/repos/AshwinSaklecha/smart-doc-generator/readme"]
+
+
+def test_fetch_nested_readmes_collects_frontend_and_backend_docs():
+    service = GitHubSourceService(
+        Settings(
+            github_username="AshwinSaklecha",
+            source_dir=ROOT_DIR / "tests" / "backend" / ".tmp" / uuid.uuid4().hex / "sources",
+            index_dir=ROOT_DIR / "tests" / "backend" / ".tmp" / uuid.uuid4().hex / "indexes",
+            log_dir=ROOT_DIR / "tests" / "backend" / ".tmp" / uuid.uuid4().hex / "logs",
+            data_dir=ROOT_DIR / "tests" / "backend" / ".tmp" / uuid.uuid4().hex,
+            _env_file=None,
+        )
+    )
+
+    class FakeResponse:
+        def __init__(self, status_code, payload):
+            self.status_code = status_code
+            self._payload = payload
+
+        def raise_for_status(self):
+            if self.status_code >= 400:
+                raise AssertionError("response should not raise")
+
+        def json(self):
+            return self._payload
+
+    class FakeClient:
+        def get(self, path):
+            payloads = {
+                "/repos/AshwinSaklecha/eCommerce-App/contents/frontend/README.md": {
+                    "encoding": "base64",
+                    "content": "IyBGcm9udGVuZAoKUmVhZG1l",
+                },
+                "/repos/AshwinSaklecha/eCommerce-App/contents/backend/README.md": {
+                    "encoding": "base64",
+                    "content": "IyBCYWNrZW5kCgpSZWFkbWU=",
+                },
+            }
+            if path in payloads:
+                return FakeResponse(200, payloads[path])
+            return FakeResponse(404, {})
+
+    nested = service._fetch_nested_readmes(FakeClient(), "AshwinSaklecha/eCommerce-App")
+
+    assert "Additional README: frontend" in nested
+    assert "Additional README: backend" in nested
+
+
+def test_fetch_nested_readmes_skips_cra_boilerplate():
+    service = GitHubSourceService(
+        Settings(
+            github_username="AshwinSaklecha",
+            source_dir=ROOT_DIR / "tests" / "backend" / ".tmp" / uuid.uuid4().hex / "sources",
+            index_dir=ROOT_DIR / "tests" / "backend" / ".tmp" / uuid.uuid4().hex / "indexes",
+            log_dir=ROOT_DIR / "tests" / "backend" / ".tmp" / uuid.uuid4().hex / "logs",
+            data_dir=ROOT_DIR / "tests" / "backend" / ".tmp" / uuid.uuid4().hex,
+            _env_file=None,
+        )
+    )
+
+    assert service._is_boilerplate_readme(
+        "# Getting Started with Create React App\n\n"
+        "This project was bootstrapped with Create React App.\n\n"
+        "## Available Scripts\n\n"
+        "## Learn React\n"
+    )

@@ -62,6 +62,8 @@ def build_services(settings: Settings) -> ServiceContainer:
         embeddings=embeddings,
         vector_store=vector_store,
         min_score=settings.retrieval_min_score,
+        github_repo_list=tuple(settings.github_repo_list),
+        github_contribution_repo_list=tuple(settings.github_contribution_repo_list),
     )
     prompt_builder = PromptBuilder(settings.allow_general_tech_answers)
     llm = LLMService(settings)

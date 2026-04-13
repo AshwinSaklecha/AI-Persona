@@ -147,3 +147,4 @@ To run this project locally, follow these steps:
 - `POST /api/v1/incomes`: Add a new income
 - `GET /api/v1/incomes`: Get all incomes
 - `DELETE /api/v1/incomes/:id`: Delete an income
+

@@ -83,3 +83,49 @@ def test_prompt_builder_pushes_broad_project_questions_toward_multiple_projects(
 
     assert "mention more than one relevant project" in prompt.user_content
     assert "Focus on personal projects first" in prompt.user_content
+
+
+def test_prompt_builder_adds_interest_guidance_without_turning_into_project_inventory():
+    builder = PromptBuilder(allow_general_tech_answers=True)
+
+    prompt = builder.build(
+        query="What interests you?",
+        retrieved_chunks=[
+            RetrievedChunk(
+                id="resume::0",
+                source_id="resume",
+                source_title="Ashwin Resume",
+                source_type="resume",
+                text="Backend systems, AI/ML, and open source.",
+                score=0.91,
+            )
+        ],
+        persona_question=True,
+    )
+
+    assert "what genuinely interests me in tech" in prompt.user_content
+    assert "Do not list a bunch of project names" in prompt.user_content
+    assert "Avoid generic filler" in prompt.user_content
+
+
+def test_prompt_builder_respects_bullet_request():
+    builder = PromptBuilder(allow_general_tech_answers=True)
+
+    prompt = builder.build(
+        query="What are some of your projects? Only write in bullet points.",
+        retrieved_chunks=[
+            RetrievedChunk(
+                id="kv::0",
+                source_id="kv",
+                source_title="AshwinSaklecha/kv-cache",
+                source_type="github",
+                text="KV-Cache summary.",
+                score=0.91,
+            )
+        ],
+        persona_question=True,
+    )
+
+    assert "Use short hyphen bullets" in prompt.user_content
+    assert "Keep each bullet concise" in prompt.user_content
+    assert "include the project name plus a short purpose or stack hint" in prompt.user_content

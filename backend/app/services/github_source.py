@@ -12,6 +12,13 @@ from app.core.config import Settings
 
 
 README_CANDIDATES = ("README.md", "README.MD", "readme.md")
+NESTED_README_DIRECTORIES = ("frontend", "backend", "front", "back", "client", "server", "app")
+BOILERPLATE_README_MARKERS = (
+    "getting started with create react app",
+    "this project was bootstrapped with",
+    "learn react",
+    "available scripts",
+)
 
 
 @dataclass(slots=True)
@@ -50,6 +57,7 @@ class GitHubSourceService:
             base_url=self.settings.github_api_base_url,
             headers=self._headers(),
             timeout=20.0,
+            trust_env=False,
         ) as client:
             for repo_full_name in repo_names:
                 payload = self._build_repo_document(client, repo_full_name)
@@ -73,6 +81,7 @@ class GitHubSourceService:
     def _build_repo_document(self, client: httpx.Client, repo_full_name: str) -> str:
         repo = self._get_json(client, f"/repos/{repo_full_name}")
         readme_text = self._fetch_readme(client, repo_full_name) or "README not available."
+        nested_readmes = self._fetch_nested_readmes(client, repo_full_name)
         languages = self._get_json(client, f"/repos/{repo_full_name}/languages")
 
         language_summary = ", ".join(sorted(languages.keys())) if languages else "Not available"
@@ -91,7 +100,8 @@ class GitHubSourceService:
             f"{description}\n\n"
             f"{'Homepage: ' + homepage + chr(10) + chr(10) if homepage else ''}"
             "## README Snapshot\n\n"
-            f"{readme_text.strip()}\n"
+            f"{readme_text.strip()}\n\n"
+            f"{nested_readmes if nested_readmes else ''}"
         )
 
     def _build_contribution_document(self, client: httpx.Client, repo_full_name: str) -> str:
@@ -183,18 +193,55 @@ class GitHubSourceService:
         if preferred_response.status_code != 404:
             preferred_response.raise_for_status()
             payload = preferred_response.json()
-            if payload.get("encoding") == "base64":
-                return base64.b64decode(payload["content"]).decode("utf-8", errors="ignore")
+            content = self._decode_content_payload(payload)
+            if content:
+                return content
 
         for candidate in README_CANDIDATES:
-            response = client.get(f"/repos/{repo_full_name}/contents/{candidate}")
-            if response.status_code == 404:
-                continue
-            response.raise_for_status()
-            payload = response.json()
-            if payload.get("encoding") == "base64":
-                return base64.b64decode(payload["content"]).decode("utf-8", errors="ignore")
+            content = self._fetch_file_content(client, repo_full_name, candidate)
+            if content:
+                return content
         return None
+
+    def _fetch_nested_readmes(self, client: httpx.Client, repo_full_name: str) -> str:
+        sections: list[str] = []
+        for directory in NESTED_README_DIRECTORIES:
+            for candidate in README_CANDIDATES:
+                path = f"{directory}/{candidate}"
+                content = self._fetch_file_content(client, repo_full_name, path)
+                if not content:
+                    continue
+                if self._is_boilerplate_readme(content):
+                    continue
+                sections.extend(
+                    [
+                        f"## Additional README: {directory}",
+                        "",
+                        content.strip(),
+                        "",
+                    ]
+                )
+                break
+        return "\n".join(sections).strip()
+
+    def _fetch_file_content(self, client: httpx.Client, repo_full_name: str, path: str) -> str | None:
+        response = client.get(f"/repos/{repo_full_name}/contents/{path}")
+        if response.status_code == 404:
+            return None
+        response.raise_for_status()
+        return self._decode_content_payload(response.json())
+
+    @staticmethod
+    def _decode_content_payload(payload: dict) -> str | None:
+        if payload.get("encoding") != "base64":
+            return None
+        return base64.b64decode(payload["content"]).decode("utf-8", errors="ignore")
+
+    @staticmethod
+    def _is_boilerplate_readme(content: str) -> bool:
+        lowered = content.lower()
+        matches = sum(marker in lowered for marker in BOILERPLATE_README_MARKERS)
+        return matches >= 2
 
     @staticmethod
     def _slug(value: str) -> str:

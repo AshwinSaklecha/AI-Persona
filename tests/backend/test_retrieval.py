@@ -130,6 +130,7 @@ def test_intro_query_expands_to_resume_style_retrieval():
         embeddings=embeddings,
         vector_store=RerankingAwareVectorStore(),
         min_score=0.35,
+        github_repo_list=("AshwinSaklecha/kv-cache", "AshwinSaklecha/expenseTracker"),
     )
 
     results = service.retrieve("Tell me about yourself", top_k=5)
@@ -144,6 +145,7 @@ def test_contribution_query_expands_to_multiple_contribution_sources():
         embeddings=embeddings,
         vector_store=RerankingAwareVectorStore(),
         min_score=0.35,
+        github_repo_list=("AshwinSaklecha/kv-cache", "AshwinSaklecha/expenseTracker"),
     )
 
     results = service.retrieve("Tell me about your open source contributions", top_k=3)
@@ -161,6 +163,7 @@ def test_project_query_prefers_personal_projects_over_contribution_chunks():
         embeddings=embeddings,
         vector_store=RerankingAwareVectorStore(),
         min_score=0.35,
+        github_repo_list=("AshwinSaklecha/kv-cache", "AshwinSaklecha/expenseTracker"),
     )
 
     results = service.retrieve("What projects have you made?", top_k=3)
@@ -168,4 +171,5 @@ def test_project_query_prefers_personal_projects_over_contribution_chunks():
     titles = [result.source_title for result in results]
 
     assert "AshwinSaklecha/kv-cache" in titles
+    assert "AshwinSaklecha/expenseTracker" in titles
     assert "DeepChem Contributions" not in titles

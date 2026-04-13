@@ -86,6 +86,34 @@ class PromptBuilder:
             requirements.append(
                 "Ground the answer in a balanced mix of internship experience, personal projects, and open-source work instead of sounding generic."
             )
+            requirements.append(
+                "Do not turn the answer into a project inventory. Mention at most one or two concrete examples unless the user asks for more detail."
+            )
+            requirements.append("Avoid generic filler or motivational clichés.")
+
+        if self._is_interest_question(lowered):
+            requirements.append(
+                "Answer this as a question about what genuinely interests me in tech and the kind of problems I like working on."
+            )
+            requirements.append(
+                "Focus on themes like backend systems, AI/ML, open source, building reliable products, and learning through real projects."
+            )
+            requirements.append(
+                "Do not list a bunch of project names unless they help explain the interest naturally."
+            )
+            requirements.append("Avoid generic filler like 'technology is always evolving' unless it is directly useful.")
+
+        if self._is_fit_question(lowered):
+            requirements.append(
+                "Answer this like a thoughtful interview response, not a resume summary."
+            )
+            requirements.append(
+                "Connect my fit to my backend focus, internship execution, project work, and open-source contributions with two or three concrete proofs."
+            )
+            requirements.append(
+                "Keep each example factually separate. Do not merge details from one project into another."
+            )
+            requirements.append("Only mention details that are explicitly supported by the retrieved context.")
 
         if self._is_contribution_question(lowered):
             requirements.append(
@@ -109,6 +137,15 @@ class PromptBuilder:
             requirements.append(
                 "Focus on personal projects first. Do not replace a project answer with open-source contributions unless the user explicitly asks about contributions too."
             )
+            requirements.append(
+                "Prefer the selected GitHub projects over resume-only projects when both are available."
+            )
+
+        if self._wants_bullets(lowered):
+            requirements.append("Use short hyphen bullets.")
+            requirements.append("Keep each bullet concise and avoid long paragraphs.")
+            if self._is_project_question(lowered):
+                requirements.append("For each project bullet, include the project name plus a short purpose or stack hint.")
 
         return "\n".join(f"- {requirement}" for requirement in requirements)
 
@@ -161,10 +198,44 @@ class PromptBuilder:
         patterns = (
             "what projects",
             "which projects",
+            "some of your projects",
             "projects have you made",
             "projects have you built",
             "what have you built",
             "personal projects",
+        )
+        return any(pattern in lowered_query for pattern in patterns)
+
+    @staticmethod
+    def _is_interest_question(lowered_query: str) -> bool:
+        patterns = (
+            "what interests you",
+            "what are your interests",
+            "what are you interested in",
+            "what do you enjoy",
+            "what excites you",
+        )
+        return any(pattern in lowered_query for pattern in patterns)
+
+    @staticmethod
+    def _is_fit_question(lowered_query: str) -> bool:
+        patterns = (
+            "why are you a good fit",
+            "why are you right for this role",
+            "why should we hire you",
+            "fit for this role",
+            "why you",
+        )
+        return any(pattern in lowered_query for pattern in patterns)
+
+    @staticmethod
+    def _wants_bullets(lowered_query: str) -> bool:
+        patterns = (
+            "bullet",
+            "bullet points",
+            "bullets",
+            "in points",
+            "as a list",
         )
         return any(pattern in lowered_query for pattern in patterns)
 
