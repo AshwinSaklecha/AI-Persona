@@ -1,11 +1,12 @@
 from __future__ import annotations
 
+import re
 from time import perf_counter
 
 from app.models.schemas import ChatResponse
 from app.services.booking_flow import BookingFlowService
 from app.services.evaluation import EvaluationLogger
-from app.services.llm import GeminiLLMService
+from app.services.llm import LLMService
 from app.services.prompting import FALLBACK_ANSWER, PromptBuilder
 from app.services.retrieval import RetrievalService
 
@@ -16,7 +17,7 @@ class PersonaChatService:
         *,
         retrieval: RetrievalService,
         prompt_builder: PromptBuilder,
-        llm: GeminiLLMService,
+        llm: LLMService,
         evaluation: EvaluationLogger,
         booking_flow: BookingFlowService,
         retrieval_top_k: int,
@@ -106,15 +107,27 @@ class PersonaChatService:
             fallback_reason=None,
             answer_mode=prompt.answer_mode,
         )
+        cleaned_answer = self._clean_answer(answer)
 
         return ChatResponse(
-            answer=answer or FALLBACK_ANSWER,
-            answer_mode=prompt.answer_mode if answer else "fallback",
+            answer=cleaned_answer or FALLBACK_ANSWER,
+            answer_mode=prompt.answer_mode if cleaned_answer else "fallback",
             conversation_id=resolved_conversation_id,
             sources=retrieved_chunks,
             booking=None,
             latency_ms=latency_ms,
             retrieval_hits=len(retrieved_chunks),
-            fallback_triggered=not bool(answer),
-            fallback_reason=None if answer else "llm_empty_response",
+            fallback_triggered=not bool(cleaned_answer),
+            fallback_reason=None if cleaned_answer else "llm_empty_response",
         )
+
+    @staticmethod
+    def _clean_answer(answer: str | None) -> str:
+        if not answer:
+            return ""
+
+        cleaned = answer.replace("\r\n", "\n").replace("**", "").replace("__", "")
+        cleaned = cleaned.replace("`", "")
+        cleaned = re.sub(r"(?m)^[ \t]*\*\s+", "- ", cleaned)
+        cleaned = re.sub(r"\n{3,}", "\n\n", cleaned)
+        return cleaned.strip()

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import re
 
 from app.models.schemas import RetrievedChunk
 
@@ -26,6 +27,7 @@ class PromptBuilder:
         user_content = (
             f"User question:\n{query}\n\n"
             f"Retrieved context:\n{context_block}\n\n"
+            f"Response requirements:\n{self._response_requirements(query, retrieved_chunks)}\n\n"
             "Answer the question now."
         )
         return PromptBundle(
@@ -44,12 +46,133 @@ class PromptBuilder:
         )
         return (
             "You are an AI persona for Ashwin Saklecha. Speak in first person as Ashwin. "
-            "Be honest, slightly informal, and clear. Do not exaggerate.\n"
+            "Be honest, slightly informal, clear, and natural. Do not exaggerate.\n"
             "When the user asks about Ashwin's resume, education, work, projects, or GitHub, "
             "answer only from the retrieved context. If the retrieved context is missing or weak, "
             f"say exactly: {FALLBACK_ANSWER}\n"
             f"{general_mode}\n"
-            "Do not invent metrics, dates, responsibilities, or project details."
+            "Do not invent metrics, dates, responsibilities, or project details.\n"
+            "When the question is broad, synthesize across the relevant sources instead of focusing on one random detail.\n"
+            "Write in plain text only.\n"
+            "Prefer short natural paragraphs. You may use simple hyphen bullets or numbered lists if they make the answer clearer.\n"
+            "Do not use markdown bold markers, tables, headings, or code blocks.\n"
+            "Do not dump the entire resume unless the user explicitly asks for everything."
+        )
+
+    def _response_requirements(
+        self,
+        query: str,
+        retrieved_chunks: list[RetrievedChunk],
+    ) -> str:
+        lowered = query.lower().strip()
+        requirements = [
+            "Sound like a natural human answer, not a profile summary.",
+            "Use plain text only.",
+        ]
+
+        if self._is_name_question(lowered):
+            requirements.append("Answer in one short sentence with the name only.")
+
+        if self._is_intro_question(lowered):
+            requirements.append(
+                "Treat this as a self-introduction. Start with who I am, what I focus on, and what kind of work I do."
+            )
+            requirements.append(
+                "After that, briefly mention the most relevant experience or projects. Do not jump straight into one project."
+            )
+            requirements.append(
+                "Mention that I am a third-year Computer Science student in Bengaluru focused on backend systems, AI/ML, and open source if that context is available."
+            )
+            requirements.append(
+                "Ground the answer in a balanced mix of internship experience, personal projects, and open-source work instead of sounding generic."
+            )
+
+        if self._is_contribution_question(lowered):
+            requirements.append(
+                "Summarize the main open-source contributions clearly instead of describing only one contribution."
+            )
+            if self._has_multiple_contribution_sources(retrieved_chunks):
+                requirements.append(
+                    "The retrieved context includes multiple contribution tracks. Mention both DeepChem and Gemini CLI."
+                )
+
+        if self._wants_short_answer(lowered):
+            requirements.append("Keep the answer to at most two short sentences.")
+
+        if self._wants_tradeoffs(lowered):
+            requirements.append("Explicitly mention tradeoffs, design choices, and why they mattered.")
+
+        if self._is_project_question(lowered):
+            requirements.append(
+                "If the user is asking broadly about my projects, mention more than one relevant project from the retrieved context instead of focusing on only one."
+            )
+            requirements.append(
+                "Focus on personal projects first. Do not replace a project answer with open-source contributions unless the user explicitly asks about contributions too."
+            )
+
+        return "\n".join(f"- {requirement}" for requirement in requirements)
+
+    @staticmethod
+    def _is_intro_question(lowered_query: str) -> bool:
+        patterns = (
+            "tell me about yourself",
+            "introduce yourself",
+            "who are you",
+            "about yourself",
+            "your background",
+        )
+        return any(pattern in lowered_query for pattern in patterns)
+
+    @staticmethod
+    def _is_name_question(lowered_query: str) -> bool:
+        patterns = (
+            "what is your name",
+            "what's your name",
+            "whats your name",
+        )
+        return any(pattern in lowered_query for pattern in patterns)
+
+    @staticmethod
+    def _is_contribution_question(lowered_query: str) -> bool:
+        patterns = (
+            "contribution",
+            "contributions",
+            "open source",
+            "deepchem",
+            "gemini cli",
+            "gemini-cli",
+            "pull request",
+            "pull requests",
+        )
+        return any(pattern in lowered_query for pattern in patterns)
+
+    @staticmethod
+    def _wants_short_answer(lowered_query: str) -> bool:
+        patterns = ("2 lines", "two lines", "2 line", "two line", "2 sentences", "two sentences")
+        return any(pattern in lowered_query for pattern in patterns)
+
+    @staticmethod
+    def _wants_tradeoffs(lowered_query: str) -> bool:
+        patterns = ("tradeoff", "trade-off", "tradeoffs", "trade offs", "design choice")
+        return any(pattern in lowered_query for pattern in patterns)
+
+    @staticmethod
+    def _is_project_question(lowered_query: str) -> bool:
+        patterns = (
+            "what projects",
+            "which projects",
+            "projects have you made",
+            "projects have you built",
+            "what have you built",
+            "personal projects",
+        )
+        return any(pattern in lowered_query for pattern in patterns)
+
+    @staticmethod
+    def _has_multiple_contribution_sources(retrieved_chunks: list[RetrievedChunk]) -> bool:
+        lowered_titles = {chunk.source_title.lower() for chunk in retrieved_chunks}
+        return any("deepchem" in title for title in lowered_titles) and any(
+            "gemini cli" in title or "gemini-cli" in title for title in lowered_titles
         )
 
     @staticmethod
@@ -59,8 +182,8 @@ class PromptBuilder:
 
         rendered = []
         for chunk in retrieved_chunks:
+            clean_text = re.sub(r"\n{3,}", "\n\n", chunk.text).strip()
             rendered.append(
-                f"[Source: {chunk.source_title} | score={chunk.score:.3f}]\n{chunk.text}"
+                f"[Source: {chunk.source_title} | score={chunk.score:.3f}]\n{clean_text}"
             )
         return "\n\n".join(rendered)
-

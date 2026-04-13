@@ -179,6 +179,13 @@ class GitHubSourceService:
         ]
 
     def _fetch_readme(self, client: httpx.Client, repo_full_name: str) -> str | None:
+        preferred_response = client.get(f"/repos/{repo_full_name}/readme")
+        if preferred_response.status_code != 404:
+            preferred_response.raise_for_status()
+            payload = preferred_response.json()
+            if payload.get("encoding") == "base64":
+                return base64.b64decode(payload["content"]).decode("utf-8", errors="ignore")
+
         for candidate in README_CANDIDATES:
             response = client.get(f"/repos/{repo_full_name}/contents/{candidate}")
             if response.status_code == 404:

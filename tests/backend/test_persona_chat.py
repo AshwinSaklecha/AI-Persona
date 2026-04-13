@@ -98,3 +98,22 @@ def test_persona_chat_uses_fallback_when_retrieval_is_weak():
     assert response.answer_mode == "fallback"
     assert response.fallback_triggered is True
     assert response.fallback_reason == "no_retrieval_match"
+
+
+def test_persona_chat_normalizes_markdown_bullets_for_plain_text_ui():
+    class MarkdownLLM:
+        def generate(self, system_instruction, user_content):
+            return "**Ashwin**\n\n* Backend engineer in training\n* Open-source contributor"
+
+    service = PersonaChatService(
+        retrieval=FakeRetrieval(),
+        prompt_builder=FakePromptBuilder(),
+        llm=MarkdownLLM(),
+        evaluation=FakeEvaluation(),
+        booking_flow=FakeBookingFlow(),
+        retrieval_top_k=5,
+    )
+
+    response = service.respond("Tell me about yourself")
+
+    assert response.answer == "Ashwin\n\n- Backend engineer in training\n- Open-source contributor"

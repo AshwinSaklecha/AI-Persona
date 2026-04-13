@@ -34,14 +34,12 @@ async def lifespan(app: FastAPI):
             logger.exception("Startup GitHub sync failed.")
             services.evaluation.log_failure("github_sync_failed", {"error": str(exc)})
 
-    if settings.auto_rebuild_on_startup and services.embeddings.ready and not services.vector_store.ready:
+    if settings.auto_rebuild_on_startup and services.embeddings.ready:
         try:
+            had_index = services.vector_store.ready
             rebuilt = services.rebuild_index()
-            logger.info(
-                "Built index on startup with %s docs and %s chunks.",
-                rebuilt.document_count,
-                rebuilt.chunk_count,
-            )
+            action = "Rebuilt" if had_index else "Built"
+            logger.info("%s index on startup with %s docs and %s chunks.", action, rebuilt.document_count, rebuilt.chunk_count)
         except Exception as exc:
             logger.exception("Startup ingestion failed.")
             services.evaluation.log_failure("startup_ingest_failed", {"error": str(exc)})

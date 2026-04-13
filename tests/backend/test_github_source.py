@@ -75,3 +75,51 @@ def test_github_source_sync_writes_repo_and_contribution_docs(monkeypatch):
     contribution_doc = Path(result.generated_files[1]).read_text(encoding="utf-8")
     assert "https://github.com/AshwinSaklecha/kv-cache" in repo_doc
     assert "PR #4661" in contribution_doc
+
+
+def test_fetch_readme_uses_repo_readme_endpoint_before_filename_guesses():
+    service = GitHubSourceService(
+        Settings(
+            github_username="AshwinSaklecha",
+            source_dir=ROOT_DIR / "tests" / "backend" / ".tmp" / uuid.uuid4().hex / "sources",
+            index_dir=ROOT_DIR / "tests" / "backend" / ".tmp" / uuid.uuid4().hex / "indexes",
+            log_dir=ROOT_DIR / "tests" / "backend" / ".tmp" / uuid.uuid4().hex / "logs",
+            data_dir=ROOT_DIR / "tests" / "backend" / ".tmp" / uuid.uuid4().hex,
+            _env_file=None,
+        )
+    )
+
+    class FakeResponse:
+        def __init__(self, status_code, payload):
+            self.status_code = status_code
+            self._payload = payload
+
+        def raise_for_status(self):
+            if self.status_code >= 400:
+                raise AssertionError("response should not raise")
+
+        def json(self):
+            return self._payload
+
+    class FakeClient:
+        def __init__(self):
+            self.paths = []
+
+        def get(self, path):
+            self.paths.append(path)
+            if path == "/repos/AshwinSaklecha/smart-doc-generator/readme":
+                return FakeResponse(
+                    200,
+                    {
+                        "encoding": "base64",
+                        "content": "IyBSRUFETUUKCnNtYXJ0LWRvYy1nZW5lcmF0b3I=",
+                    },
+                )
+            return FakeResponse(404, {})
+
+    client = FakeClient()
+
+    readme = service._fetch_readme(client, "AshwinSaklecha/smart-doc-generator")
+
+    assert readme == "# README\n\nsmart-doc-generator"
+    assert client.paths == ["/repos/AshwinSaklecha/smart-doc-generator/readme"]

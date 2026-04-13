@@ -117,22 +117,6 @@ export function PersonaConsole() {
               ) : null}
             </div>
             <p>{message.content}</p>
-            {message.response?.booking?.slots.length ? (
-              <div className="slot-list booking-slot-list">
-                {message.response.booking.slots.map((slot, index) => (
-                  <button
-                    key={slot.start}
-                    type="button"
-                    className="slot-chip"
-                    onClick={() => {
-                      void handleSend(String(index + 1));
-                    }}
-                  >
-                    {index + 1}. {slot.label}
-                  </button>
-                ))}
-              </div>
-            ) : null}
             {message.response?.booking?.meeting_url ? (
               <div className="success-card compact-success">
                 <strong>Booking confirmed</strong>
@@ -143,25 +127,6 @@ export function PersonaConsole() {
                 >
                   Open meeting link
                 </a>
-              </div>
-            ) : null}
-            {message.response?.sources.length ? (
-              <div className="source-list">
-                {message.response.sources.map((source) => (
-                  <div className="source-chip source-card" key={source.id}>
-                    <div className="source-card-main">
-                      <strong>{source.source_title}</strong>
-                      <span>
-                        {source.source_type} · {source.score.toFixed(3)}
-                      </span>
-                    </div>
-                    {source.url ? (
-                      <a href={source.url} target="_blank" rel="noreferrer">
-                        Open source
-                      </a>
-                    ) : null}
-                  </div>
-                ))}
               </div>
             ) : null}
           </article>

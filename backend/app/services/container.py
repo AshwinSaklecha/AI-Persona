@@ -11,7 +11,7 @@ from app.services.chunking import TextChunker
 from app.services.embeddings import GeminiEmbeddingService
 from app.services.evaluation import EvaluationLogger
 from app.services.github_source import GitHubSourceService
-from app.services.llm import GeminiLLMService
+from app.services.llm import LLMService
 from app.services.persona_chat import PersonaChatService
 from app.services.prompting import PromptBuilder
 from app.services.retrieval import RetrievalService
@@ -28,7 +28,7 @@ class ServiceContainer:
     vector_store: VectorStore
     retrieval: RetrievalService
     prompt_builder: PromptBuilder
-    llm: GeminiLLMService
+    llm: LLMService
     evaluation: EvaluationLogger
     source_loader: LocalSourceLoader
     github_source: GitHubSourceService
@@ -64,7 +64,7 @@ def build_services(settings: Settings) -> ServiceContainer:
         min_score=settings.retrieval_min_score,
     )
     prompt_builder = PromptBuilder(settings.allow_general_tech_answers)
-    llm = GeminiLLMService(settings)
+    llm = LLMService(settings)
     evaluation = EvaluationLogger(settings)
     source_loader = LocalSourceLoader(settings.source_dir)
     github_source = GitHubSourceService(settings)

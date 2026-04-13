@@ -16,11 +16,15 @@ class GeminiEmbeddingService:
 
         try:
             from google import genai
+            from google.genai import types
         except Exception as exc:  # pragma: no cover - import-path safety
             self._import_error = exc
             return
 
-        self._client = genai.Client(api_key=settings.gemini_api_key)
+        self._client = genai.Client(
+            api_key=settings.gemini_api_key,
+            http_options=types.HttpOptions(clientArgs={"trust_env": False}),
+        )
 
     @property
     def ready(self) -> bool:
@@ -40,4 +44,3 @@ class GeminiEmbeddingService:
 
     def embed_query(self, text: str) -> list[float]:
         return self.embed_texts([text])[0]
-

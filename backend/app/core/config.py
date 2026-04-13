@@ -16,9 +16,41 @@ class Settings(BaseSettings):
     app_debug: bool = Field(default=False, validation_alias="APP_DEBUG")
     api_prefix: str = "/api"
 
+    llm_provider: str = Field(default="gemini", validation_alias="LLM_PROVIDER")
+    llm_generation_max_attempts: int = Field(
+        default=2,
+        validation_alias="LLM_GENERATION_MAX_ATTEMPTS",
+    )
+    llm_generation_retry_base_delay_ms: int = Field(
+        default=500,
+        validation_alias="LLM_GENERATION_RETRY_BASE_DELAY_MS",
+    )
+    llm_temperature: float = Field(default=0.2, validation_alias="LLM_TEMPERATURE")
+    llm_max_output_tokens: int = Field(
+        default=700,
+        validation_alias="LLM_MAX_OUTPUT_TOKENS",
+    )
+
     gemini_api_key: str | None = Field(default=None, validation_alias="GEMINI_API_KEY")
     gemini_chat_model: str = "gemini-2.5-flash"
+    gemini_chat_fallback_model: str | None = Field(
+        default="gemini-2.5-flash-lite",
+        validation_alias="GEMINI_CHAT_FALLBACK_MODEL",
+    )
     gemini_embedding_model: str = "gemini-embedding-001"
+    groq_api_key: str | None = Field(default=None, validation_alias="GROQ_API_KEY")
+    groq_chat_model: str = Field(
+        default="llama-3.3-70b-versatile",
+        validation_alias="GROQ_CHAT_MODEL",
+    )
+    groq_chat_fallback_model: str | None = Field(
+        default="llama-3.1-8b-instant",
+        validation_alias="GROQ_CHAT_FALLBACK_MODEL",
+    )
+    groq_api_base_url: str = Field(
+        default="https://api.groq.com/openai/v1",
+        validation_alias="GROQ_API_BASE_URL",
+    )
 
     github_username: str | None = Field(default=None, validation_alias="GITHUB_USERNAME")
     github_repos: str = Field(default="", validation_alias="GITHUB_REPOS")
