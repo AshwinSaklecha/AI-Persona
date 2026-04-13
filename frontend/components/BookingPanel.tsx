@@ -88,11 +88,15 @@ export function BookingPanel() {
   }
 
   return (
-    <section className="panel booking-panel">
+    <section className="panel panel-wide booking-panel">
       <div className="panel-header">
         <div>
-          <p className="eyebrow">Cal.com booking</p>
-          <h2>Check live availability</h2>
+          <p className="eyebrow">Manual booking</p>
+          <h2>Check live availability and confirm a slot.</h2>
+          <p className="panel-copy">
+            Use this if you want a direct booking flow without going through the chat
+            assistant first.
+          </p>
         </div>
       </div>
 
@@ -116,7 +120,7 @@ export function BookingPanel() {
       </div>
 
       <button onClick={loadSlots} disabled={loadingSlots}>
-        {loadingSlots ? "Loading slots..." : "Suggest slots"}
+        {loadingSlots ? "Loading slots..." : "Find slots"}
       </button>
 
       <div className="slot-list">
@@ -139,7 +143,7 @@ export function BookingPanel() {
             type="text"
             value={attendeeName}
             onChange={(event) => setAttendeeName(event.target.value)}
-            placeholder="Your name"
+            placeholder="Full name"
           />
         </label>
         <label>
@@ -148,7 +152,7 @@ export function BookingPanel() {
             type="email"
             value={attendeeEmail}
             onChange={(event) => setAttendeeEmail(event.target.value)}
-            placeholder="you@example.com"
+            placeholder="name@example.com"
           />
         </label>
       </div>

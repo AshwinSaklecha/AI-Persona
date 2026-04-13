@@ -12,6 +12,17 @@ type Message = {
   response?: ChatResponse;
 };
 
+function getAnswerBadge(response: ChatResponse) {
+  switch (response.answer_mode) {
+    case "general":
+      return "General";
+    case "booking":
+      return "Booking";
+    default:
+      return "Grounded";
+  }
+}
+
 function buildId(prefix: string) {
   return `${prefix}-${crypto.randomUUID()}`;
 }
@@ -70,11 +81,14 @@ export function PersonaConsole() {
   }
 
   return (
-    <section className="panel">
+    <section className="panel panel-wide">
       <div className="panel-header">
         <div>
-          <p className="eyebrow">Grounded chat</p>
-          <h2>Ask me about my resume, GitHub work, or projects</h2>
+          <p className="eyebrow">Main chat</p>
+          <h2>Ask about resume, repositories, contributions, or availability.</h2>
+          <p className="panel-copy">
+            Text and voice both feed the same backend, so the facts should stay aligned.
+          </p>
         </div>
         <div className="status-stack">
           <span className={`status-pill ${loading ? "busy" : ""}`}>
@@ -101,9 +115,9 @@ export function PersonaConsole() {
           <div className="empty-state">
             <p>Try prompts like:</p>
             <ul>
-              <li>Tell me about your DeepChem contributions.</li>
-              <li>What did you build during your internship at Spenza?</li>
-              <li>Explain LRU eviction in simple terms.</li>
+              <li>Walk me through the design of kv-cache.</li>
+              <li>What tradeoffs did you make in expenseTracker?</li>
+              <li>What changed in your Gemini CLI contribution?</li>
               <li>Book a meeting with me next week.</li>
             </ul>
           </div>
@@ -118,11 +132,7 @@ export function PersonaConsole() {
               <span>{message.role === "assistant" ? "Ashwin" : "You"}</span>
               {message.response ? (
                 <span>
-                  {message.response.answer_mode === "general"
-                    ? "General tech mode"
-                    : message.response.answer_mode === "booking"
-                      ? "Booking flow"
-                      : `${message.response.latency_ms} ms`}
+                  {getAnswerBadge(message.response)} · {message.response.latency_ms} ms
                 </span>
               ) : null}
             </div>
@@ -182,7 +192,7 @@ export function PersonaConsole() {
         <textarea
           value={input}
           onChange={(event) => setInput(event.target.value)}
-          placeholder="Type a question for Ashwin..."
+          placeholder="Ask a question or start a booking flow..."
           rows={4}
         />
         <div className="composer-actions">

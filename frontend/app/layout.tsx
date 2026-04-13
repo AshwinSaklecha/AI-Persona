@@ -1,9 +1,15 @@
 import type { Metadata } from "next";
+
+import { SiteHeader } from "@/components/SiteHeader";
+
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Ashwin Persona",
-  description: "AI persona for Ashwin Saklecha with grounded chat, voice, and booking."
+  title: {
+    default: "Ashwin Persona",
+    template: "%s | Ashwin Persona"
+  },
+  description: "Grounded AI persona for Ashwin Saklecha with chat, voice, and booking."
 };
 
 export default function RootLayout({
@@ -13,8 +19,12 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        <div className="app-frame">
+          <SiteHeader />
+          <div className="page-shell">{children}</div>
+        </div>
+      </body>
     </html>
   );
 }
-
