@@ -45,6 +45,25 @@ def test_vapi_tool_payload_includes_function_and_secret_header():
     assert payload["server"]["headers"]["X-Vapi-Secret"] == "shared-secret"
 
 
+def test_vapi_update_tool_omits_type_field():
+    service = build_service()
+    captured = {}
+
+    def fake_request(method, path, *, json=None):
+        captured["method"] = method
+        captured["path"] = path
+        captured["json"] = json
+        return {"id": "tool-123"}
+
+    service._request = fake_request  # type: ignore[method-assign]
+
+    service._update_tool("tool-123", "https://persona.example.com/api/vapi/tools")
+
+    assert captured["method"] == "PATCH"
+    assert captured["path"] == "/tool/tool-123"
+    assert "type" not in captured["json"]
+
+
 def test_vapi_assistant_patch_preserves_existing_model_and_prepends_tool():
     service = build_service()
     current_assistant = {

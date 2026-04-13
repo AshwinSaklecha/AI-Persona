@@ -122,7 +122,9 @@ class VapiAdminService:
         return self._request("POST", "/tool", json=self._build_tool_payload(tool_server_url))
 
     def _update_tool(self, tool_id: str, tool_server_url: str) -> dict[str, Any]:
-        return self._request("PATCH", f"/tool/{tool_id}", json=self._build_tool_payload(tool_server_url))
+        payload = self._build_tool_payload(tool_server_url)
+        payload.pop("type", None)
+        return self._request("PATCH", f"/tool/{tool_id}", json=payload)
 
     def _get_assistant(self, assistant_id: str) -> dict[str, Any]:
         return self._request("GET", f"/assistant/{assistant_id}")
