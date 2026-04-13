@@ -63,7 +63,7 @@ def test_github_source_sync_writes_repo_and_contribution_docs(monkeypatch):
         raise AssertionError(f"Unexpected path: {path}")
 
     monkeypatch.setattr(service, "_get_json", fake_get_json)
-    monkeypatch.setattr(service, "_fetch_readme", lambda client, repo: "# README\n\ncontent")
+    monkeypatch.setattr(service, "_fetch_readme", lambda client, repo, explicit_path=None: "# README\n\ncontent")
     monkeypatch.setattr(service, "_fetch_nested_readmes", lambda client, repo: "")
 
     result = service.sync(refresh=True)
@@ -190,3 +190,59 @@ def test_fetch_nested_readmes_skips_cra_boilerplate():
         "## Available Scripts\n\n"
         "## Learn React\n"
     )
+
+
+def test_fetch_readme_uses_explicit_repo_readme_path_when_configured():
+    service = GitHubSourceService(
+        Settings(
+            github_username="AshwinSaklecha",
+            github_repo_readme_paths=(
+                "AshwinSaklecha/eCommerce-App=backend/README.md;"
+                "AshwinSaklecha/smart-doc-generator=readme.MD"
+            ),
+            source_dir=ROOT_DIR / "tests" / "backend" / ".tmp" / uuid.uuid4().hex / "sources",
+            index_dir=ROOT_DIR / "tests" / "backend" / ".tmp" / uuid.uuid4().hex / "indexes",
+            log_dir=ROOT_DIR / "tests" / "backend" / ".tmp" / uuid.uuid4().hex / "logs",
+            data_dir=ROOT_DIR / "tests" / "backend" / ".tmp" / uuid.uuid4().hex,
+            _env_file=None,
+        )
+    )
+
+    class FakeResponse:
+        def __init__(self, status_code, payload):
+            self.status_code = status_code
+            self._payload = payload
+
+        def raise_for_status(self):
+            if self.status_code >= 400:
+                raise AssertionError("response should not raise")
+
+        def json(self):
+            return self._payload
+
+    class FakeClient:
+        def __init__(self):
+            self.paths = []
+
+        def get(self, path):
+            self.paths.append(path)
+            if path == "/repos/AshwinSaklecha/eCommerce-App/contents/backend/README.md":
+                return FakeResponse(
+                    200,
+                    {
+                        "encoding": "base64",
+                        "content": "IyBCYWNrZW5kCgpSZWFkbWU=",
+                    },
+                )
+            return FakeResponse(404, {})
+
+    client = FakeClient()
+
+    readme = service._fetch_readme(
+        client,
+        "AshwinSaklecha/eCommerce-App",
+        explicit_path=service._explicit_readme_path("AshwinSaklecha/eCommerce-App"),
+    )
+
+    assert readme == "# Backend\n\nReadme"
+    assert client.paths == ["/repos/AshwinSaklecha/eCommerce-App/contents/backend/README.md"]

@@ -54,6 +54,10 @@ class Settings(BaseSettings):
 
     github_username: str | None = Field(default=None, validation_alias="GITHUB_USERNAME")
     github_repos: str = Field(default="", validation_alias="GITHUB_REPOS")
+    github_repo_readme_paths: str = Field(
+        default="",
+        validation_alias="GITHUB_REPO_README_PATHS",
+    )
     github_contribution_repos: str = Field(
         default="deepchem/deepchem",
         validation_alias="GITHUB_CONTRIBUTION_REPOS",
@@ -142,9 +146,26 @@ class Settings(BaseSettings):
     def github_contribution_repo_list(self) -> list[str]:
         return self._split_csv(self.github_contribution_repos)
 
+    @property
+    def github_repo_readme_path_map(self) -> dict[str, str]:
+        mappings: dict[str, str] = {}
+        for item in self._split_semicolon_csv(self.github_repo_readme_paths):
+            if "=" not in item:
+                continue
+            repo_name, readme_path = item.split("=", 1)
+            repo_name = repo_name.strip()
+            readme_path = readme_path.strip().lstrip("/")
+            if repo_name and readme_path:
+                mappings[repo_name.lower()] = readme_path
+        return mappings
+
     @staticmethod
     def _split_csv(value: str) -> list[str]:
         return [item.strip() for item in value.split(",") if item.strip()]
+
+    @staticmethod
+    def _split_semicolon_csv(value: str) -> list[str]:
+        return [item.strip() for item in value.split(";") if item.strip()]
 
 
 @lru_cache(maxsize=1)

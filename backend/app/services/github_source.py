@@ -80,8 +80,9 @@ class GitHubSourceService:
 
     def _build_repo_document(self, client: httpx.Client, repo_full_name: str) -> str:
         repo = self._get_json(client, f"/repos/{repo_full_name}")
-        readme_text = self._fetch_readme(client, repo_full_name) or "README not available."
-        nested_readmes = self._fetch_nested_readmes(client, repo_full_name)
+        explicit_readme_path = self._explicit_readme_path(repo_full_name)
+        readme_text = self._fetch_readme(client, repo_full_name, explicit_path=explicit_readme_path) or "README not available."
+        nested_readmes = "" if explicit_readme_path else self._fetch_nested_readmes(client, repo_full_name)
         languages = self._get_json(client, f"/repos/{repo_full_name}/languages")
 
         language_summary = ", ".join(sorted(languages.keys())) if languages else "Not available"
@@ -188,7 +189,18 @@ class GitHubSourceService:
             pull for pull in pulls if pull.get("user", {}).get("login", "").lower() == username.lower()
         ]
 
-    def _fetch_readme(self, client: httpx.Client, repo_full_name: str) -> str | None:
+    def _fetch_readme(
+        self,
+        client: httpx.Client,
+        repo_full_name: str,
+        *,
+        explicit_path: str | None = None,
+    ) -> str | None:
+        if explicit_path:
+            content = self._fetch_file_content(client, repo_full_name, explicit_path)
+            if content:
+                return content
+
         preferred_response = client.get(f"/repos/{repo_full_name}/readme")
         if preferred_response.status_code != 404:
             preferred_response.raise_for_status()
@@ -202,6 +214,9 @@ class GitHubSourceService:
             if content:
                 return content
         return None
+
+    def _explicit_readme_path(self, repo_full_name: str) -> str | None:
+        return self.settings.github_repo_readme_path_map.get(repo_full_name.lower())
 
     def _fetch_nested_readmes(self, client: httpx.Client, repo_full_name: str) -> str:
         sections: list[str] = []
