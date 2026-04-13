@@ -62,6 +62,6 @@ def test_vapi_assistant_patch_preserves_existing_model_and_prepends_tool():
     assert payload["firstMessage"] == PERSONA_FIRST_MESSAGE
     assert payload["model"]["provider"] == "openai"
     assert payload["model"]["model"] == "gpt-4.1"
-    assert payload["model"]["temperature"] == 0.5
+    assert payload["model"]["temperature"] == 0.1
     assert payload["model"]["toolIds"] == ["tool-123", "existing-tool"]
     assert payload["model"]["messages"][0]["role"] == "system"

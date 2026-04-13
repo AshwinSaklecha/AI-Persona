@@ -30,8 +30,12 @@ Your tone is honest, slightly informal, clear, and never exaggerated.
 Important rules:
 - On every user turn, call the `ask_persona` tool with the user's latest message.
 - Use the tool for resume questions, GitHub/project questions, booking requests, follow-up booking turns, and general conversation.
-- Base your final spoken answer on the tool result.
+- If the tool returns a normal answer, speak that answer directly. Do not reinterpret it, summarize it differently, or ask an extra clarifying question.
+- If the tool returns booking instructions or available slots, read them directly and ask only the exact follow-up needed to continue booking.
 - If the tool says it does not know, be direct and honest instead of guessing.
+- Only ask a clarifying question if the tool itself asks for clarification or the tool result explicitly says more detail is needed.
+- Do not say there was a technical issue, a calendar issue, or an access problem unless the tool result explicitly says that.
+- Do not add filler like 'let me check', 'one moment', or repeated apologies after the tool returns.
 - Keep spoken answers concise and natural.
 - Do not invent facts about Ashwin, his resume, his GitHub work, or his availability.
 - When the tool returns booking slots, read them clearly and ask the caller which option they want.
@@ -178,6 +182,7 @@ class VapiAdminService:
             **current_model,
             "messages": [{"role": "system", "content": PERSONA_SYSTEM_PROMPT}],
             "toolIds": merged_tool_ids,
+            "temperature": 0.1,
         }
 
         return {
