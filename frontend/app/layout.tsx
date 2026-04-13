@@ -9,7 +9,7 @@ export const metadata: Metadata = {
     default: "Ashwin Persona",
     template: "%s | Ashwin Persona"
   },
-  description: "Grounded AI persona for Ashwin Saklecha with chat, voice, and booking."
+  description: "Grounded AI persona for Ashwin Saklecha with chat and booking."
 };
 
 export default function RootLayout({

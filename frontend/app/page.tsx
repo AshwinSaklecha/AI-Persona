@@ -5,11 +5,11 @@ export default function HomePage() {
     <main className="page-stack">
       <section className="page-hero">
         <p className="eyebrow">About</p>
-        <h1>A grounded AI version of Ashwin for chat, calls, and booking.</h1>
+        <h1>A grounded AI version of Ashwin for chat and booking.</h1>
         <p className="hero-copy">
           This persona is built around real resume data, selected GitHub work,
-          contribution history, and live availability. Chat and voice both route into
-          the same backend so the answers stay consistent and source-backed.
+          contribution history, and live availability. The website is focused on text
+          chat and scheduling, while the phone-call flow lives separately.
         </p>
         <div className="hero-actions">
           <Link href="/chat" className="button-link">
@@ -24,10 +24,10 @@ export default function HomePage() {
       <section className="feature-grid">
         <article className="feature-card">
           <p className="eyebrow">What it does</p>
-          <h2>One persona, three ways to interact.</h2>
+          <h2>One persona, two actions on the web.</h2>
           <p>
-            Use the chat page for grounded answers, the voice flow for live
-            conversation, and the booking page when you want a direct calendar flow.
+            Use the chat page for grounded answers and the booking page when you want a
+            direct calendar flow without conversation.
           </p>
         </article>
 

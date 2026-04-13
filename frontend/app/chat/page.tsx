@@ -7,8 +7,8 @@ export default function ChatPage() {
         <p className="eyebrow">Chat</p>
         <h1>Ask Ashwin directly.</h1>
         <p className="hero-copy">
-          This is the main grounded conversation surface. You can type, start a voice
-          call, ask about projects, or move straight into scheduling.
+          This is the main grounded conversation surface. Ask about projects,
+          experience, contributions, or move straight into scheduling.
         </p>
       </section>
 

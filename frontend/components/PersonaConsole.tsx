@@ -3,7 +3,6 @@
 import { FormEvent, useState } from "react";
 
 import { ChatResponse, sendChatMessage } from "@/lib/api";
-import { useVapiVoice } from "@/hooks/useVapiVoice";
 
 type Message = {
   id: string;
@@ -33,8 +32,6 @@ export function PersonaConsole() {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  const voice = useVapiVoice();
 
   async function handleSend(content?: string) {
     const message = (content ?? input).trim();
@@ -87,26 +84,9 @@ export function PersonaConsole() {
           <p className="eyebrow">Main chat</p>
           <h2>Ask about resume, repositories, contributions, or availability.</h2>
           <p className="panel-copy">
-            Text and voice both feed the same backend, so the facts should stay aligned.
+            This is the public chat interface for the persona. Use it for grounded
+            questions or to start the booking flow.
           </p>
-        </div>
-        <div className="status-stack">
-          <span className={`status-pill ${loading ? "busy" : ""}`}>
-            {loading ? "Thinking..." : "Ready"}
-          </span>
-          <span
-            className={`status-pill ${voice.active || voice.connecting ? "busy" : ""}`}
-          >
-            {voice.active
-              ? voice.speaking
-                ? "Voice speaking"
-                : "Voice live"
-              : voice.connecting
-                ? "Connecting voice"
-                : voice.ready
-                  ? "Voice ready"
-                  : "Voice setup needed"}
-          </span>
         </div>
       </div>
 
@@ -197,27 +177,12 @@ export function PersonaConsole() {
         />
         <div className="composer-actions">
           <button type="submit" disabled={loading}>
-            Send
+            {loading ? "Thinking..." : "Send"}
           </button>
-          {voice.supported ? (
-            <button
-              type="button"
-              className="secondary"
-              onClick={voice.active ? () => void voice.stopCall() : () => void voice.startCall()}
-              disabled={voice.connecting}
-            >
-              {voice.active ? "End voice call" : voice.connecting ? "Connecting..." : "Start voice call"}
-            </button>
-          ) : (
-            <button type="button" className="secondary" disabled>
-              Voice unavailable
-            </button>
-          )}
         </div>
       </form>
 
       {error ? <p className="error-text">{error}</p> : null}
-      {voice.error ? <p className="error-text">{voice.error}</p> : null}
     </section>
   );
 }
