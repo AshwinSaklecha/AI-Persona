@@ -39,18 +39,27 @@ def test_github_source_sync_writes_repo_and_contribution_docs(monkeypatch):
             }
         if path == "/repos/AshwinSaklecha/kv-cache/languages":
             return {"Python": 1000}
-        if path == "/repos/deepchem/deepchem/pulls":
-            return [
-                {
-                    "number": 4661,
-                    "title": "Implement DeepONet Architecture",
-                    "html_url": "https://github.com/deepchem/deepchem/pull/4661",
-                    "state": "open",
-                    "merged_at": None,
-                    "body": "Adds DeepONet.",
-                    "user": {"login": "AshwinSaklecha"},
-                }
-            ]
+        if path == "/search/issues":
+            assert params is not None
+            assert params["q"] == "repo:deepchem/deepchem is:pr author:AshwinSaklecha"
+            return {
+                "items": [
+                    {
+                        "number": 4661,
+                        "title": "Implement DeepONet Architecture",
+                    }
+                ]
+            }
+        if path == "/repos/deepchem/deepchem/pulls/4661":
+            return {
+                "number": 4661,
+                "title": "Implement DeepONet Architecture",
+                "html_url": "https://github.com/deepchem/deepchem/pull/4661",
+                "state": "open",
+                "merged_at": None,
+                "body": "Adds DeepONet.",
+                "user": {"login": "AshwinSaklecha"},
+            }
         raise AssertionError(f"Unexpected path: {path}")
 
     monkeypatch.setattr(service, "_get_json", fake_get_json)

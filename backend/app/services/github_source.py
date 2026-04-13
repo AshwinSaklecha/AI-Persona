@@ -99,14 +99,7 @@ class GitHubSourceService:
         if not username:
             raise RuntimeError("GITHUB_USERNAME is required for contribution ingestion.")
 
-        pulls = self._get_json(
-            client,
-            f"/repos/{repo_full_name}/pulls",
-            params={"state": "all", "sort": "updated", "direction": "desc", "per_page": 100},
-        )
-        authored_pulls = [
-            pull for pull in pulls if pull.get("user", {}).get("login", "").lower() == username.lower()
-        ]
+        authored_pulls = self._fetch_authored_pull_requests(client, repo_full_name, username)
 
         sections = [
             f"# {repo_full_name} Contributions",
@@ -140,6 +133,51 @@ class GitHubSourceService:
 
         return "\n".join(sections).strip() + "\n"
 
+    def _fetch_authored_pull_requests(
+        self,
+        client: httpx.Client,
+        repo_full_name: str,
+        username: str,
+    ) -> list[dict]:
+        try:
+            search_results = self._get_json(
+                client,
+                "/search/issues",
+                params={
+                    "q": f"repo:{repo_full_name} is:pr author:{username}",
+                    "sort": "updated",
+                    "order": "desc",
+                    "per_page": 25,
+                },
+            )
+        except httpx.HTTPStatusError:
+            search_results = None
+
+        if isinstance(search_results, dict):
+            items = search_results.get("items") or []
+            authored_pulls: list[dict] = []
+            for item in items:
+                number = item.get("number")
+                if not isinstance(number, int):
+                    continue
+                detailed_pull = self._get_json(client, f"/repos/{repo_full_name}/pulls/{number}")
+                if not isinstance(detailed_pull, dict):
+                    continue
+                authored_pulls.append(detailed_pull)
+            if authored_pulls:
+                return authored_pulls
+
+        pulls = self._get_json(
+            client,
+            f"/repos/{repo_full_name}/pulls",
+            params={"state": "all", "sort": "updated", "direction": "desc", "per_page": 100},
+        )
+        if not isinstance(pulls, list):
+            return []
+        return [
+            pull for pull in pulls if pull.get("user", {}).get("login", "").lower() == username.lower()
+        ]
+
     def _fetch_readme(self, client: httpx.Client, repo_full_name: str) -> str | None:
         for candidate in README_CANDIDATES:
             response = client.get(f"/repos/{repo_full_name}/contents/{candidate}")
@@ -170,4 +208,3 @@ class GitHubSourceService:
         if self.settings.github_token:
             headers["Authorization"] = f"Bearer {self.settings.github_token}"
         return headers
-
