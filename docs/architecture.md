@@ -1,12 +1,16 @@
 # AI Persona Architecture
 
-A FastAPI-powered conversational AI system with RAG-based knowledge retrieval, multi-surface interaction (web chat and voice calls), and integrated scheduling. The backend serves as the unified control plane for consistent behavior across all client interfaces.
+A conversational AI that people can chat with on the web or call on the phone, and can also book meetings. Built with FastAPI backend, Next.js frontend, Vapi voice integration, and RAG-based knowledge retrieval.
 
 ## System Overview
 
+Two ways to interact: web chat interface built with Next.js, or voice calls through Vapi. Both go into the same FastAPI backend - that's the key. Whether someone types a message or speaks on the phone, it all flows through the same logic for consistent responses.
+
+The backend talks to external services: Groq for generating responses, Gemini for understanding text meaning, Cal.com for booking meetings, and GitHub to pull in work information.
+
 ```mermaid
 flowchart TB
-    subgraph "Client Layer"
+    subgraph "Client Interfaces"
         WEB[Next.js Web Chat]
         PHONE[Vapi Voice Calls]
     end
@@ -16,30 +20,34 @@ flowchart TB
         SERVICES[Core Services]
     end
     
-    subgraph "Knowledge Base"
-        SOURCES[Resume + GitHub Repos]
-        FAISS[Vector Index]
+    subgraph "External Services"
+        GROQ[Groq - Response Generation]
+        GEMINI[Gemini - Text Embeddings]
+        CAL[Cal.com - Meeting Booking]
+        GITHUB[GitHub - Work Data]
     end
     
-    subgraph "External APIs"
-        GROQ[Groq LLM]
-        GEMINI[Gemini Embeddings]
-        CAL[Cal.com Booking]
-        GITHUB[GitHub API]
+    subgraph "Knowledge Base"
+        SOURCES[Resume + GitHub Repos + PR Summaries]
+        FAISS[FAISS Vector Database]
     end
     
     WEB --> ROUTES
     PHONE --> ROUTES
     ROUTES --> SERVICES
-    SERVICES --> FAISS
     SERVICES --> GROQ
     SERVICES --> GEMINI
     SERVICES --> CAL
     SERVICES --> GITHUB
+    SERVICES --> FAISS
     SOURCES --> FAISS
 ```
 
 ## Backend Architecture
+
+Everything starts with main.py, which sets up API routes for chat, booking, data ingestion, and Vapi integration. The real magic happens in the service container - like a toolbox where each tool has a specific job. 
+
+The persona chat service is the brain that decides how to respond. The retrieval service finds relevant information. The LLM service talks to Groq to generate natural responses. Data services handle embeddings and the vector store (turning text into numbers for fast search). Integration services handle booking meetings through Cal.com.
 
 ```mermaid
 flowchart TB
@@ -110,6 +118,10 @@ flowchart TB
 
 ## RAG Pipeline
 
+This keeps the AI grounded in real information instead of making things up. It pulls from three sources: resume, selected GitHub repositories, and contribution summaries.
+
+All content gets chunked up, turned into embeddings through Gemini, and stored in a FAISS vector database. When someone asks a question, we embed their question the same way, search for similar content, and use that as context for generating the response.
+
 ```mermaid
 flowchart LR
     subgraph "Source Ingestion"
@@ -154,7 +166,11 @@ flowchart LR
     RERANK --> CONTEXT
 ```
 
-## Web Chat Request Flow
+## Request Flow - Web Chat
+
+When someone uses the web chat, they send a message that goes to the persona service, which decides if they're trying to book a meeting or asking a question.
+
+For regular questions: retrieve relevant context from the vector store, build a prompt with that context, send it to Groq, and return a grounded response.
 
 ```mermaid
 sequenceDiagram
@@ -185,7 +201,9 @@ sequenceDiagram
     API-->>Client: JSON response
 ```
 
-## Voice & Booking Flow
+## Request Flow - Voice & Booking
+
+For voice calls, it's similar but goes through Vapi first. The cool thing is that booking works the same way whether you're typing or talking - it all uses the same booking flow service that connects to Cal.com.
 
 ```mermaid
 sequenceDiagram
@@ -217,12 +235,12 @@ sequenceDiagram
     Vapi-->>Caller: Spoken response
 ```
 
-## Architecture Strengths
+## Why This Architecture Works
 
-**Unified Backend Logic**: Both web chat and voice calls flow through the same PersonaChatService, ensuring consistent behavior and responses across all interaction surfaces.
+**Unified**: Web and voice use the same backend logic, so responses stay consistent no matter how people interact with it.
 
-**Grounded Knowledge**: RAG pipeline uses only curated sources (resume, selected repos, PR summaries) stored locally, eliminating hallucination and maintaining answer quality through controlled indexing.
+**Grounded**: Answers come from real sources (resume, GitHub repos, PR summaries), not hallucinations.
 
-**Clean Separation**: Ingestion, retrieval, generation, and external integrations are isolated into dedicated services, allowing independent evolution and easier testing of each component.
+**Clean**: Each service has one job, so you can update parts without breaking everything else.
 
-**Stateless Design**: Request-response model with conversation context managed at the application layer enables horizontal scaling and simplified deployment.
+The system is straightforward: take input from multiple channels, find relevant information, generate a response, and handle booking if needed. The key is keeping everything flowing through the same backend for consistent experience.
