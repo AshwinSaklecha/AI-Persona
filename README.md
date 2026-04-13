@@ -6,6 +6,7 @@ This repo is set up as a phased build for a production-style AI persona system:
 - `frontend/`: Next.js app with grounded chat UI, Vapi web voice controls, and a simple booking panel
 - `data/sources/`: source-of-truth documents that feed the RAG pipeline
 - `tests/backend/`: basic tests for chunking, retrieval, and vector search
+- `docs/architecture.md`: backend-first architecture overview with Mermaid diagrams
 - `docs/vapi-setup.md`: exact Vapi dashboard setup for web calls, phone calls, and tool wiring
 
 ## Current Milestone
